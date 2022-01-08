@@ -67,8 +67,9 @@ a {
 .chat-sidebar {
   background: var(--dark-color-b);
   color: #fff;
-  padding: 20px 20px 60px;
-  overflow-y: scroll;
+  padding: 20px 1px 20px 20px;
+  height: 500px;
+  /* overflow-y: scroll; */
 }
 
 .chat-sidebar h2 {
@@ -80,14 +81,23 @@ a {
 
 .chat-sidebar h3 {
   margin-bottom: 15px;
+  position: fixed;
+}
+
+.chat-sidebar .users {
+  margin-top: 25px;
+  padding-top: 10px;
+  overflow-y: scroll;
+  height: 440px;
 }
 
 .chat-sidebar ul li {
-  padding: 10px 0;
+  padding: 10px 20px;
 }
 
 .chat-messages {
   padding: 30px;
+  height: 420px;
   max-height: 500px;
   overflow-y: scroll;
 }
