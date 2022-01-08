@@ -2,7 +2,7 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
-const { addUser, getUserList, userLeave } = require('./utils/users');
+const { addUser, getUserList, getCurrentUser, userLeave } = require('./utils/users');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,8 +26,9 @@ io.on("connection", (socket) => {
 
   // Listen emitted text from user and log them
   socket.on('chatText', (text) => {
-      console.log(text, socket.id);
-      socket.emit('textToClient', text);
+    const response = `Dear ${getCurrentUser(socket.id)},\nYour message has been received.`;
+    console.log(text, getCurrentUser(socket.id));
+    socket.emit('staticMessageFromServer', response);
   });
 
   socket.on('disconnect', () => {

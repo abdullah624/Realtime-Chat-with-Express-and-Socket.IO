@@ -1,4 +1,5 @@
 const chatForm = document.getElementById('chat-form');
+const chatMessages = document.querySelector('.chat-messages');
 const userList = document.getElementById('users');
 
 // Get username from URL
@@ -44,11 +45,11 @@ chatForm.addEventListener('submit', (e) => {
   });
 
   // Listen message from server
-  socket.on('textToClient', text => {
-      console.log(text, username);
+  socket.on('staticMessageFromServer', response => {
+    outputMessage(response);
   });
 
-  // Add users to DOM
+  // Add active users to DOM
   function outputUsers(users) {
     userList.innerHTML = '';
     users.forEach((user) => {
@@ -56,4 +57,12 @@ chatForm.addEventListener('submit', (e) => {
       li.innerText = user.username;
       userList.appendChild(li);
     });
+  }
+
+  // Output message to DOM
+  function outputMessage(response) {
+    const p = document.createElement('p');
+    p.classList.add('message');
+    p.innerText = response;
+    chatMessages.appendChild(p);
   }
