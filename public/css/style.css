@@ -25,6 +25,13 @@ ul {
   list-style: none;
 }
 
+ul li:hover {
+  background-color: #6399f8;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 a {
   text-decoration: none;
 }
