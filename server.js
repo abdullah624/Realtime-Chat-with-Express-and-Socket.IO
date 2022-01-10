@@ -4,6 +4,7 @@ const express = require('express');
 const socketio = require('socket.io');
 const moment = require('moment');
 const { addUser, getUserList, getCurrentUser, getReceiverSocketId, userLeave } = require('./utils/users');
+const formatMessage = require('./utils/messages');
 
 const app = express();
 const server = http.createServer(app);
@@ -15,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Run when new user connects
 io.on("connection", (socket) => {
   let currentUser = '';
-  let connectedToAnotherUser = false;
+  let receiver = '';
   // Get username from user
   socket.on('userName', userName => {
     //Add user to userlist
@@ -32,24 +33,37 @@ io.on("connection", (socket) => {
   }, 500);
 
   // Send welcome message to user
-  socket.emit('welcomeMessage', 'Welcome to InstantChat!\nPlease select a user to start conversation.');
+  socket.emit('welcomeMessage', formatMessage('Server', 'Please select a user to start conversation.') );
 
+  // Get receiver name
   socket.on('selectedReceiver', receiverName => {
-    connectedToAnotherUser = receiverName;
-  })
-
-  // Listen emitted text from user and log them
-  socket.on('chatText', text => {
-    if(!connectedToAnotherUser){
-      const response = `Dear ${currentUser},\nPlease select a user to start conversation.`;
-      socket.emit('staticMessageFromServer', response);
-    } else {
-      io.to(getReceiverSocketId(connectedToAnotherUser)).emit('message', `${currentUser} ${moment().format('h:mm a')}\n ${text}`);
+    if(!receiver || receiver === receiverName){
+      receiver = receiverName;
+    }
+    else{
+      socket.emit('deselectReceiver', receiver);
+      receiver = receiverName;
     }
   });
 
+  // Listen emitted text from sender and emit them to receiver
+  socket.on('chatText', text => {
+    if(!receiver){
+      socket.emit('staticMessageFromServer', formatMessage('Server', 'Please select a user to start conversation.'));
+    } else {
+      try {
+        io.to(getReceiverSocketId(receiver)).emit('message', formatMessage(`${currentUser}`, `${text}`));
+      } catch(e) {
+        socket.emit('staticMessageFromServer', formatMessage('Server', `${receiver} has left.`));
+      }
+    }
+  });
+
+  // Run when user disconnect
   socket.on('disconnect', () => {
     const user = userLeave(socket.id);
+    socket.broadcast.emit('updatedUserList', getUserList(), user);
+    receiver = '';
   });
 });
 

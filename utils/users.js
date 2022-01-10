@@ -26,10 +26,12 @@ function getReceiverSocketId(receiverName) {
 // Remove user from user list when disconnect
 function userLeave(id) {
   const index = users.findIndex(user => user.id === id);
-
+  let userName = null;
   if (index !== -1) {
+    userName = users[index].username;
     users.splice(index, 1);
   }
+  return userName;
 }
 
 module.exports = { addUser, getUserList, getCurrentUser, getReceiverSocketId, userLeave };
