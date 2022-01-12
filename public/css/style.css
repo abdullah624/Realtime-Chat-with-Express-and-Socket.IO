@@ -100,6 +100,7 @@ a {
 .notification {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-top: 0px;
+  display: none;
 }
 .notification-header {
   height: 45px;
@@ -261,6 +262,17 @@ a {
   padding: 5px;
   height: 40px;
   flex: 1;
+}
+
+#emoji-btn {
+  font-size: 27px;
+  margin: 3px 7px 3px 0px;
+}
+
+#emoji-btn:hover {
+  font-size: 28px;
+  margin: 3px 6px 2px 0px;
+  cursor: pointer;
 }
 
 /* Join Page */

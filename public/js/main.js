@@ -187,15 +187,15 @@ chatForm.addEventListener('submit', (e) => {
     function clickHandler(e) {
       if(activeUsers.length){
         for(let i = 0, len = userList.childElementCount; i < len; i++) {
-          if(userList.childNodes[i].innerText == (e.target == b ? b : div.childNodes[1]).innerText.split(/\d/)[0].trim()) {
+          if(userList.childNodes[i].innerText === (e.target === b ? b : div.childNodes[1]).innerText.split(/\d/)[0].trim()) {
             userList.childNodes[i].click();
             outputMessage(text);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            notificationArea.removeChild(div);
+            if(toNotificationArea) {
+              notificationArea.removeChild(div);
+            }
             notificationIcon.innerText = notificationArea.childElementCount == 0? '': notificationArea.childElementCount;
-          }
-          else{
-            console.log('did not matched with any active user.');
+            break;
           }
         }
       } else {
@@ -215,4 +215,21 @@ chatForm.addEventListener('submit', (e) => {
       notification.style.display = 'none';
     }
   });
+
+  const picker = new EmojiButton({
+    autoHide: false,
+    emojiSize: '25px',
+    emojisPerRow: 10,
+    rows: 3,
+    showSearch: false,
+    showPreview: false,
+    position: 'top-start'
+  });
+  const emojiTrigger = document.getElementById('emoji-btn');
+  
+  picker.on('emoji', selection => {
+    chatForm.elements.msg.value += `${selection}`;
+  });
+  
+  emojiTrigger.addEventListener('click', () => picker.togglePicker(emojiTrigger));
 
