@@ -2,11 +2,26 @@ const chatForm = document.getElementById('chat-form');
 const chatMessages = document.querySelector('.chat-messages');
 const userList = document.getElementById('users');
 const receiverInfo = document.getElementById('receiver-info') ;
+const profileName = document.getElementById('profile-name');
+const notificationArea = document.getElementById('notification-area');
+const notification = document.getElementById('notification');
+const chatMain = document.getElementById('chat-main');
 
 // Get username from URL
 const {username} = Qs.parse(location.search, {
   ignoreQueryPrefix: true,
 });
+
+let connectedSender = '';
+let activeUsers = '';
+let activeUser = '';
+let toNotificationArea = 1;
+
+profileName.innerText = username;
+profileName.innerHTML += '<i id = "notify" class="fas fa-bell"></i>';
+profileName.innerHTML += '<i class="fas fa-sign-out-alt"></i>';//fa-ellipsis-v fa-angle-down
+
+const notificationIcon = document.getElementById('notify');
 
 const socket = io();
 
@@ -16,6 +31,7 @@ socket.emit('userName', username);
 // Get active user list from server
 socket.on('userList', (users) => {
   if(users.length > 0){
+    activeUsers = [...users];
     outputUsers(users);
   }
 });
@@ -23,6 +39,7 @@ socket.on('userList', (users) => {
 // Get updated user list
 socket.on('updatedUserList', (users, user) => {
   users = users.filter(user => user.id !== socket.id);
+  activeUsers = [...users];
   outputUsers(users);
   if(user === receiverInfo.innerText) {
     chatMessages.innerHTML = '';
@@ -54,6 +71,7 @@ chatForm.addEventListener('submit', (e) => {
 
     if(receiverInfo.innerText != 'InstantChat Server') {
       outputMessage({userName: 'You', text, time: moment().format('h:mm a')});
+      chatMessages.scrollTop = chatMessages.scrollHeight;
     }
   
     // Clear input
@@ -70,7 +88,14 @@ chatForm.addEventListener('submit', (e) => {
 
   // Listen message from sender
   socket.on('message', text => {
-    outputMessage(text);
+    if(!connectedSender){
+      outputNotification(text);
+    } else if(connectedSender != text.userName) {
+      outputNotification(text, toNotificationArea);
+    } else {
+      outputMessage(text);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
   });
 
   //Deselect receiver
@@ -96,8 +121,9 @@ chatForm.addEventListener('submit', (e) => {
       li.addEventListener('click', e => {
         if(receiverInfo.innerText != user.username) {
           receiverInfo.innerText = user.username;
+          connectedSender = user.username;
           for(let i = 0, len = chatMessages.childNodes.length; i < len; i++){
-            if(chatMessages.childNodes[i].innerText.split(' ')[0] != user.username){
+            if(chatMessages.childNodes[i].innerText.split(/\d/)[0].trim() != user.username){
               chatMessages.removeChild(chatMessages.childNodes[i]);
               len--;
               i--;
@@ -108,7 +134,7 @@ chatForm.addEventListener('submit', (e) => {
         e.target.style.fontWeight = 'bold';
         e.target.style.borderRadius = '10px';
         socket.emit('selectedReceiver', e.target.innerText);
-      })
+      });
     });
   }
 
@@ -130,3 +156,63 @@ chatForm.addEventListener('submit', (e) => {
     }
     chatMessages.appendChild(div);
   }
+
+  function outputNotification(text, toNotificationArea = 0) {
+    const div = document.createElement('div');
+    div.classList.add('message');
+    const p = document.createElement('p');
+    p.classList.add('meta');
+    p.innerText = 'Server';
+    p.innerHTML += `<span> ${text.time}</span>`;
+    div.appendChild(p);
+    const b = document.createElement('b'), ptext = document.createElement('p');
+    b.classList.add('sender');
+    b.appendChild(document.createTextNode(`${text.userName} `));
+    div.appendChild(b);
+    ptext.innerText = 'has sent you a message.';
+    div.appendChild(ptext);
+    ptext.style.display = 'inline-block';
+
+    if(!toNotificationArea){
+      chatMessages.appendChild(div);
+      b.onclick = clickHandler;
+    } else{
+      p.innerText = 'Message from:';
+      ptext.innerHTML = `<span> ${text.time}</span>`;
+      notificationArea.appendChild(div);
+      notificationIcon.innerText = notificationArea.childElementCount;
+      notificationIcon.style.color = 'red';
+      div.onclick = clickHandler;
+    }
+    function clickHandler(e) {
+      if(activeUsers.length){
+        for(let i = 0, len = userList.childElementCount; i < len; i++) {
+          if(userList.childNodes[i].innerText == (e.target == b ? b : div.childNodes[1]).innerText.split(/\d/)[0].trim()) {
+            userList.childNodes[i].click();
+            outputMessage(text);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            notificationArea.removeChild(div);
+            notificationIcon.innerText = notificationArea.childElementCount == 0? '': notificationArea.childElementCount;
+          }
+          else{
+            console.log('did not matched with any active user.');
+          }
+        }
+      } else {
+        console.log('No active user.');
+      }
+    }
+  }
+
+  notification.style.display = 'none';
+  notificationIcon.addEventListener('click', e => {
+    notificationIcon.style.color = '';
+    if(notification.style.display == 'none'){
+      notification.style.display = 'block';
+      chatMain.style.gridTemplateColumns = '1fr 3fr 1fr';
+    } else{
+      chatMain.style.gridTemplateColumns = '1fr 4fr';
+      notification.style.display = 'none';
+    }
+  });
+
