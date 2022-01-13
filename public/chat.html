@@ -3,12 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css"
       integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk="
       crossorigin="anonymous"
     />
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@3.0.0/dist/index.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@3.0.2/dist/index.min.js"></script>
     <link rel="stylesheet" href="css/style.css" />
     <title>Chat | InstantChat</title>
   </head>
@@ -16,8 +19,9 @@
     <div class="chat-container">
       <header class="chat-header">
         <h1>InstantChat</h1>
+        <h3 id="profile-name"></h3>
       </header>
-      <main class="chat-main">
+      <main id="chat-main" class="chat-main">
         <div class="chat-sidebar">
           <h3><i class="fas fa-users"></i> Active Users</h3>
           <div class="users">
@@ -25,9 +29,13 @@
           </div>
         </div>
         <div class="chat">
+          <div class="receiver-info">
+            <h2 id="receiver-info">InstantChat Server</h2>
+          </div>
           <div class="chat-messages"></div>
           <div class="chat-form-container">
             <form id="chat-form">
+              <span id="emoji-btn">&#128578</span>
               <input
                 id="msg"
                 type="text"
@@ -39,25 +47,25 @@
             </form>
           </div>
         </div>
+        <div id="notification" class="notification">
+          <div class="notification-header">
+            <h2>Notifications</h2>
+          </div>
+          <div id="notification-area"></div>
+        </div>
       </main>
-      <!-- <div class="chat-form-container">
-        <form id="chat-form">
-          <input
-            id="msg"
-            type="text"
-            placeholder="Enter Message"
-            required
-            autocomplete="off"
-          />
-          <button class="btn">Send</button>
-        </form>
-      </div> -->
     </div>
 
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.9.2/qs.min.js"
       integrity="sha256-TDxXjkAUay70ae/QJBEpGKkpVslXaHHayklIVglFRT4="
       crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+      integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
     ></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/main.js"></script>
