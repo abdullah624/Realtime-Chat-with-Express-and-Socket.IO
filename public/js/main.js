@@ -149,7 +149,49 @@ chatForm.addEventListener('submit', (e) => {
     div.appendChild(p);
     const ptext = document.createElement('p');
     ptext.classList.add('text');
-    ptext.innerText = message.text;
+
+    //
+
+    let regexpBold = /\\B{1}(?<content>(\S+))\\B{1}/g;
+    let regexpItalic = /\\i{1}(?<content>(\S+))\\i{1}/g;
+    let regexpUnderline = /\\u{1}(?<content>(\S+))\\u{1}/g;
+    let regexpDelete = /\\d{1}(?<content>(\S+))\\d{1}/g;
+    let regexpH1 = /\\(h1){1}(?<content>(\S+))\\(h1){1}/g;
+    let regexpH2 = /\\(h2){1}(?<content>(\S+))\\(h2){1}/g;
+    let regexpH3 = /\\(h3){1}(?<content>(\S+))\\(h3){1}/g;
+    let regexpH4 = /\\(h4){1}(?<content>(\S+))\\(h4){1}/g;
+    let regexpH5 = /\\(h5){1}(?<content>(\S+))\\(h5){1}/g;
+    let regexpH6 = /\\(h6){1}(?<content>(\S+))\\(h6){1}/g;
+    let regexpRed = /\\(red){1}(?<content>(\S+))\\(red){1}/g;
+    let regexpGreen = /\\(green){1}(?<content>(\S+))\\(green){1}/g;
+    let regexpBlue = /\\(blue){1}(?<content>(\S+))\\(blue){1}/g;
+    let regexpWhite = /\\(white){1}(?<content>(\S+))\\(white){1}/g;
+    let regexpPink = /\\(pink){1}(?<content>(\S+))\\(pink){1}/g;
+    let regexpLink = /\\a{1}(?<content>(\S+))\\a{1}/g;
+
+    message.text = message.text.replace(regexpBold, '<b>$<content></b>');
+    message.text = message.text.replace(regexpItalic, '<i>$<content></i>');
+    message.text = message.text.replace(regexpUnderline, '<u>$<content></u>');
+    message.text = message.text.replace(regexpDelete, '<del>$<content></del>');
+    message.text = message.text.replace(regexpH1, '<h1>$<content></h1>');
+    message.text = message.text.replace(regexpH2, '<h2>$<content></h2>');
+    message.text = message.text.replace(regexpH3, '<h3>$<content></h3>');
+    message.text = message.text.replace(regexpH4, '<h4>$<content></h4>');
+    message.text = message.text.replace(regexpH5, '<h5>$<content></h5>');
+    message.text = message.text.replace(regexpH6, '<h6>$<content></h6>');
+    message.text = message.text.replace(regexpRed, '<span style="color: red">$<content></span>');
+    message.text = message.text.replace(regexpGreen, '<span style="color: green">$<content></span>');
+    message.text = message.text.replace(regexpBlue, '<span style="color: blue">$<content></span>');
+    message.text = message.text.replace(regexpWhite, '<span style="color: white">$<content></span>');
+    message.text = message.text.replace(regexpPink, '<span style="color: pink">$<content></span>');
+    message.text = message.text.replace(regexpLink, content => {
+      let ref=`'${content.slice(2,-2)} target="_blank"'`;
+      return `<a href=${ref} >${content.slice(2,-2)}</a>`;
+    });
+
+    ptext.innerHTML = message.text;
+    //
+    // ptext.innerText = message.text;
     div.appendChild(ptext);
     if(message.userName == 'You'){
       div.style.marginLeft = 'auto';
@@ -204,6 +246,7 @@ chatForm.addEventListener('submit', (e) => {
     }
   }
 
+  // Add/Remove notification panel
   notification.style.display = 'none';
   notificationIcon.addEventListener('click', e => {
     notificationIcon.style.color = '';
@@ -216,11 +259,12 @@ chatForm.addEventListener('submit', (e) => {
     }
   });
 
+  // Add emoji panel
   const picker = new EmojiButton({
     autoHide: false,
-    emojiSize: '25px',
-    emojisPerRow: 10,
-    rows: 3,
+    emojiSize: '20px',
+    emojisPerRow: 14,
+    rows: 4,
     showSearch: false,
     showPreview: false,
     position: 'top-start'
