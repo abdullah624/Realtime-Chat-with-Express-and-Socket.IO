@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Run when new user connects
 io.on("connection", (socket) => {
   let currentUser = '';
-  let receiver = '';
+  let receiver = {name: '', id: ''};
   // Get username from user
   socket.on('userName', userName => {
     //Add user to userlist
@@ -36,25 +36,27 @@ io.on("connection", (socket) => {
   socket.emit('welcomeMessage', formatMessage('Server', 'Please select a user to start conversation.') );
 
   // Get receiver name
-  socket.on('selectedReceiver', receiverName => {
-    if(!receiver || receiver === receiverName){
-      receiver = receiverName;
+  socket.on('receiverSelection', (user) => {
+    if(!receiver.name || (receiver.name === user.name && receiver.id === user.id)){
+      receiver.name = user.name;
+      receiver.id = user.id;
     }
     else{
-      socket.emit('deselectReceiver', receiver);
-      receiver = receiverName;
+      socket.emit('receiverDeselection', {name: receiver.name, id: receiver.id});
+      receiver.name = user.name;
+      receiver.id = user.id;
     }
   });
 
   // Listen emitted text from sender and emit them to receiver
   socket.on('chatText', text => {
-    if(!receiver){
+    if(!receiver.id){
       socket.emit('staticMessageFromServer', formatMessage('Server', 'Please select a user to start conversation.'));
     } else {
       try {
-        io.to(getReceiverSocketId(receiver)).emit('message', formatMessage(`${currentUser}`, `${text}`));
+        io.to(receiver.id).emit('message', formatMessage(`${currentUser}`, `${text}`, socket.id));
       } catch(e) {
-        socket.emit('staticMessageFromServer', formatMessage('Server', `${receiver} has left.`));
+        socket.emit('staticMessageFromServer', formatMessage('Server', `${receiver.name} has left.`));
       }
     }
   });
@@ -63,7 +65,8 @@ io.on("connection", (socket) => {
   socket.on('disconnect', () => {
     const user = userLeave(socket.id);
     socket.broadcast.emit('updatedUserList', getUserList(), user);
-    receiver = '';
+    receiver.name = '';
+    receiver.id = '';
   });
 });
 

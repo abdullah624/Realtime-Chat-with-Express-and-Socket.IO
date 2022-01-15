@@ -1,11 +1,17 @@
+import { formatMessage } from "./utils/formats.js";
+
 const chatForm = document.getElementById('chat-form');
 const chatMessages = document.querySelector('.chat-messages');
 const userList = document.getElementById('users');
 const receiverInfo = document.getElementById('receiver-info') ;
-const profileName = document.getElementById('profile-name');
+// const profileDiv = document.getElementById('profile-name');
+const profileName = document.getElementById('profile-name-span');
 const notificationArea = document.getElementById('notification-area');
 const notification = document.getElementById('notification');
 const chatMain = document.getElementById('chat-main');
+const notificationIcon = document.getElementById('notify');
+const logoutIcon = document.getElementById('logout');
+
 
 // Get username from URL
 const {username} = Qs.parse(location.search, {
@@ -18,12 +24,16 @@ let activeUser = '';
 let toNotificationArea = 1;
 
 profileName.innerText = username;
-profileName.innerHTML += '<i id = "notify" class="fas fa-bell"></i>';
-profileName.innerHTML += '<i class="fas fa-sign-out-alt"></i>';//fa-ellipsis-v fa-angle-down
-
-const notificationIcon = document.getElementById('notify');
 
 const socket = io();
+
+let selectedReceiver = {name: '', id: ''};
+
+// Logout button
+logoutIcon.addEventListener('click', e => {
+  socket.disconnect();
+  location.replace("index.html");
+})
 
 // Send userName to server
 socket.emit('userName', username);
@@ -44,7 +54,7 @@ socket.on('updatedUserList', (users, user) => {
   if(user === receiverInfo.innerText) {
     chatMessages.innerHTML = '';
     receiverInfo.innerText = 'InstantChat Server';
-    outputMessage({userName: 'Server', text: `${user} has left.`, time: moment().format('h:mm a')});
+    outputMessage({userName: 'Server', text: `\\B\\blue${user}\\blue\\B has left.`, time: moment().format('h:mm a')});
   }
 })
 
@@ -88,9 +98,9 @@ chatForm.addEventListener('submit', (e) => {
 
   // Listen message from sender
   socket.on('message', text => {
-    if(!connectedSender){
+    if(!selectedReceiver.name){ //
       outputNotification(text);
-    } else if(connectedSender != text.userName) {
+    } else if(selectedReceiver.id != text.id) { //
       outputNotification(text, toNotificationArea);
     } else {
       outputMessage(text);
@@ -99,9 +109,9 @@ chatForm.addEventListener('submit', (e) => {
   });
 
   //Deselect receiver
-  socket.on('deselectReceiver', receiver => {
+  socket.on('receiverDeselection', (user) => {
     for(let i = 0, len = userList.children.length; i < len; i++){
-      if(userList.children[i].innerText === receiver){
+      if(userList.children[i].innerText === user.name && userList.children[i].id ===user.id){
         userList.children[i].style.backgroundColor = '';
         userList.children[i].style.fontWeight = '';
         userList.children[i].style.borderRadius = '';
@@ -116,12 +126,18 @@ chatForm.addEventListener('submit', (e) => {
     users.forEach((user) => {
       const li = document.createElement('li');
       li.classList.add('user');
+      li.id = `${user.id}`;
       li.innerText = user.username;
       userList.appendChild(li);
       li.addEventListener('click', e => {
-        if(receiverInfo.innerText != user.username) {
+        if(selectedReceiver.id !== user.id) {
           receiverInfo.innerText = user.username;
-          connectedSender = user.username;
+          selectedReceiver.name = user.username;
+          selectedReceiver.id = user.id;
+          e.target.style.backgroundColor = '#0e2f68';
+          e.target.style.fontWeight = 'bold';
+          e.target.style.borderRadius = '10px';
+          socket.emit('receiverSelection', {name: user.username, id: user.id});
           for(let i = 0, len = chatMessages.childNodes.length; i < len; i++){
             if(chatMessages.childNodes[i].innerText.split(/\d/)[0].trim() != user.username){
               chatMessages.removeChild(chatMessages.childNodes[i]);
@@ -130,10 +146,6 @@ chatForm.addEventListener('submit', (e) => {
             }
           }
         }
-        e.target.style.backgroundColor = '#0e2f68';
-        e.target.style.fontWeight = 'bold';
-        e.target.style.borderRadius = '10px';
-        socket.emit('selectedReceiver', e.target.innerText);
       });
     });
   }
@@ -150,46 +162,7 @@ chatForm.addEventListener('submit', (e) => {
     const ptext = document.createElement('p');
     ptext.classList.add('text');
 
-    //
-
-    let regexpBold = /\\B{1}(?<content>(\S+))\\B{1}/g;
-    let regexpItalic = /\\i{1}(?<content>(\S+))\\i{1}/g;
-    let regexpUnderline = /\\u{1}(?<content>(\S+))\\u{1}/g;
-    let regexpDelete = /\\d{1}(?<content>(\S+))\\d{1}/g;
-    let regexpH1 = /\\(h1){1}(?<content>(\S+))\\(h1){1}/g;
-    let regexpH2 = /\\(h2){1}(?<content>(\S+))\\(h2){1}/g;
-    let regexpH3 = /\\(h3){1}(?<content>(\S+))\\(h3){1}/g;
-    let regexpH4 = /\\(h4){1}(?<content>(\S+))\\(h4){1}/g;
-    let regexpH5 = /\\(h5){1}(?<content>(\S+))\\(h5){1}/g;
-    let regexpH6 = /\\(h6){1}(?<content>(\S+))\\(h6){1}/g;
-    let regexpRed = /\\(red){1}(?<content>(\S+))\\(red){1}/g;
-    let regexpGreen = /\\(green){1}(?<content>(\S+))\\(green){1}/g;
-    let regexpBlue = /\\(blue){1}(?<content>(\S+))\\(blue){1}/g;
-    let regexpWhite = /\\(white){1}(?<content>(\S+))\\(white){1}/g;
-    let regexpPink = /\\(pink){1}(?<content>(\S+))\\(pink){1}/g;
-    let regexpLink = /\\a{1}(?<content>(\S+))\\a{1}/g;
-
-    message.text = message.text.replace(regexpBold, '<b>$<content></b>');
-    message.text = message.text.replace(regexpItalic, '<i>$<content></i>');
-    message.text = message.text.replace(regexpUnderline, '<u>$<content></u>');
-    message.text = message.text.replace(regexpDelete, '<del>$<content></del>');
-    message.text = message.text.replace(regexpH1, '<h1>$<content></h1>');
-    message.text = message.text.replace(regexpH2, '<h2>$<content></h2>');
-    message.text = message.text.replace(regexpH3, '<h3>$<content></h3>');
-    message.text = message.text.replace(regexpH4, '<h4>$<content></h4>');
-    message.text = message.text.replace(regexpH5, '<h5>$<content></h5>');
-    message.text = message.text.replace(regexpH6, '<h6>$<content></h6>');
-    message.text = message.text.replace(regexpRed, '<span style="color: red">$<content></span>');
-    message.text = message.text.replace(regexpGreen, '<span style="color: green">$<content></span>');
-    message.text = message.text.replace(regexpBlue, '<span style="color: blue">$<content></span>');
-    message.text = message.text.replace(regexpWhite, '<span style="color: white">$<content></span>');
-    message.text = message.text.replace(regexpPink, '<span style="color: pink">$<content></span>');
-    message.text = message.text.replace(regexpLink, content => {
-      let ref=`'${content.slice(2,-2)} target="_blank"'`;
-      return `<a href=${ref} >${content.slice(2,-2)}</a>`;
-    });
-
-    ptext.innerHTML = message.text;
+    ptext.innerHTML = formatMessage(message.text);
     //
     // ptext.innerText = message.text;
     div.appendChild(ptext);
@@ -199,7 +172,7 @@ chatForm.addEventListener('submit', (e) => {
     chatMessages.appendChild(div);
   }
 
-  function outputNotification(text, toNotificationArea = 0) {
+  function outputNotification(text, toNotificationArea1 = 0) {
     const div = document.createElement('div');
     div.classList.add('message');
     const p = document.createElement('p');
@@ -215,8 +188,9 @@ chatForm.addEventListener('submit', (e) => {
     div.appendChild(ptext);
     ptext.style.display = 'inline-block';
 
-    if(!toNotificationArea){
+    if(!toNotificationArea1){
       chatMessages.appendChild(div);
+      b.id = `${text.id}`;
       b.onclick = clickHandler;
     } else{
       p.innerText = 'Message from:';
@@ -224,21 +198,36 @@ chatForm.addEventListener('submit', (e) => {
       notificationArea.appendChild(div);
       notificationIcon.innerText = notificationArea.childElementCount;
       notificationIcon.style.color = 'red';
+      div.id = `${text.id}`;
       div.onclick = clickHandler;
     }
     function clickHandler(e) {
+      let toNotificationArea2 = toNotificationArea1;
       if(activeUsers.length){
         for(let i = 0, len = userList.childElementCount; i < len; i++) {
-          if(userList.childNodes[i].innerText === (e.target === b ? b : div.childNodes[1]).innerText.split(/\d/)[0].trim()) {
+          if(/*userList.childNodes[i].innerText === (e.target === b ? b : div.childNodes[1]).innerText.split(/\d/)[0].trim() && */ e.target.id === userList.childNodes[i].id) {
             userList.childNodes[i].click();
             outputMessage(text);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            if(toNotificationArea) {
+            if(toNotificationArea2) {
               notificationArea.removeChild(div);
+              notificationIcon.innerText = notificationArea.childElementCount == 0? '': notificationArea.childElementCount;
+              toNotificationArea2 = 0;
             }
-            notificationIcon.innerText = notificationArea.childElementCount == 0? '': notificationArea.childElementCount;
             break;
           }
+        }
+        if(toNotificationArea2) {
+          notificationArea.removeChild(div);
+          notificationIcon.innerText = notificationArea.childElementCount == 0? '': notificationArea.childElementCount;
+          chatMessages.innerHTML = '';
+          receiverInfo.innerText = 'InstantChat Server';
+        } else{
+          chatMessages.innerHTML = '';
+        }
+        outputMessage(text);
+        if(receiverInfo.innerText !== text.userName){
+          outputMessage({userName: 'Server', text: `\\B\\blue${text.userName}\\blue\\B has left.`, time: moment().format('h:mm a')});
         }
       } else {
         console.log('No active user.');
