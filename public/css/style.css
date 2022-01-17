@@ -278,6 +278,12 @@ a {
   color: #00098d;
 }
 
+#leave-btn {
+  font-size: 16px;
+  color: #f70d05a8;
+  float: right;
+}
+
 .chat-messages {
   padding: 25px;
   height: 375px;
