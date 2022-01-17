@@ -3,7 +3,7 @@ const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 const moment = require('moment');
-const { addUser, getUserList, getCurrentUser, getReceiverSocketId, userLeave } = require('./utils/users');
+const { addUser, getUserList, getCurrentUser, getReceiverSocketId, userLeave, joinGroup } = require('./utils/users');
 const formatMessage = require('./utils/messages');
 
 const app = express();
@@ -23,6 +23,27 @@ io.on("connection", (socket) => {
     addUser(socket.id, userName);
     currentUser = userName;
   })
+
+  ///
+
+  socket.on('joinGroup', ({ username, groupName }) => {
+    const user = joinGroup(socket.id, username, groupName);
+
+    socket.join(user.groupName);
+
+    // Welcome current user
+    socket.emit('welcomeToGroup', {message:formatMessage('Server', `Welcome to ${user.groupName}!`), user});
+
+    // Broadcast when a user connects
+    socket.broadcast
+      .to(user.groupName)
+      .emit(
+        'broadcastMessage',
+        formatMessage('Server', `${user.username} has joined the chat`)
+      );
+  });
+
+  ///
 
   // Send userlist to user
   socket.emit('userList', getUserList().filter(user => user.id !== socket.id));

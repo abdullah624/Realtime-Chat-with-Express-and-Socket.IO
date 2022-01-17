@@ -18,11 +18,18 @@
     <div class="chat-container">
       <header class="chat-header">
         <h1>InstantChat</h1>
-        <!-- <h3 id="profile-name"></h3> -->
         <div id="profile-name">
-          <span id="profile-name-span">InstantChat Server</span>
+          <!---<span id="profile-name-span">InstantChat Server</span>-->
+          <span id="profile-name-span"></span>
           <i id = "notify" class="fas fa-bell"></i>
-          <i id="logout" class="fas fa-sign-out-alt"></i>
+          <div class="dropdown">
+            <i id="dropdown" class="fas fa-chevron-down"></i>
+            <div id="dropdown-content" class="dropdown-content">
+            <p id="create-group"><i class="fas fa-plus-circle"></i> Create Group</p>
+            <p><i class="fas fa-plus-circle"></i> Join Group</p>
+            <p id="logout"><i style="padding-left: 2px;" class="fas fa-sign-out-alt"></i> Logout</p>
+            </div>
+          </div>
         </div>
       </header>
       <main id="chat-main" class="chat-main">
@@ -31,10 +38,27 @@
           <div class="users">
             <ul id="users"></ul>
           </div>
+          <h3><i class="fas fa-users"></i> Groups</h3>
+          <div class="groups">
+            <ul id="groups">
+            </ul>
+          </div>
         </div>
         <div class="chat">
           <div class="receiver-info">
             <h2 id="receiver-info">InstantChat Server</h2>
+          </div>
+          <div id="group-creator-form-container" class="group-creator-form-container">
+            <form id="group-creator-form">
+              <input
+                id="groupname"
+                type="text"
+                placeholder="Enter Group Name"
+                required
+                autocomplete="off"
+              />
+              <button class="btn">Create Group</button>
+            </form>
           </div>
           <div class="chat-messages"></div>
           <div class="chat-form-container">
