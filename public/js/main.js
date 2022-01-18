@@ -29,7 +29,7 @@ let activeUsers = "";
 let activeUser = "";
 let toNotificationArea = 1;
 let mode = "";
-let groupName = '';
+let groupName = "";
 
 profileName.innerText = username;
 
@@ -132,18 +132,21 @@ groupCreatorForm.addEventListener("submit", (e) => {
 
 // Welcome message to new group member
 socket.on("welcomeToGroup", ({ message, user }) => {
+  deselectReceiver({ name: selectedReceiver.name, id: selectedReceiver.id });
+  selectedReceiver.name = ''; ///
+  selectedReceiver.id = '';
   chatMessages.innerHTML = "";
   receiverInfo.innerText = user.groupName;
   receiverInfo.innerHTML += '<button id="leave-btn">Leave Group</button>';
 
-  document.getElementById('leave-btn').addEventListener('click', e => {
-    socket.emit('leaveGroup', {username, groupName});
+  document.getElementById("leave-btn").addEventListener("click", (e) => {
+    socket.emit("leaveGroup", { username, groupName });
     chatMessages.innerHTML = "";
-    receiverInfo.innerText = 'InstantChat';
-    mode = '';
-    groupName = '';
-
-  })
+    receiverInfo.innerText = "InstantChat";
+    mode = "";
+    groupName = "";
+    groupList.removeChild(groupList.lastChild);
+  });
   outputMessage(message);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 });
@@ -155,20 +158,16 @@ socket.on("broadcastMessageOnJoin", (message) => {
 });
 
 // Print group messages
-socket.on('groupMessage', message => {
+socket.on("groupMessage", (message) => {
   outputMessage(message);
   chatMessages.scrollTop = chatMessages.scrollHeight;
-})
+});
 
 // Inform group members about member leave
 socket.on("broadcastMessageOnLeave", (message) => {
   outputMessage(message);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 });
-
-
-
-
 
 // Listen message from server
 socket.on("staticMessageFromServer", (response) => {
@@ -179,13 +178,14 @@ socket.on("staticMessageFromServer", (response) => {
 
 // Listen message from sender
 socket.on("message", (text) => {
-  if (!selectedReceiver.name) {
-    //
+  if (!selectedReceiver.name && mode != 'group') {
+    console.log('!selectedReceiver.name');
     outputNotification(text);
-  } else if (selectedReceiver.id != text.id) {
-    //
+  } else if (selectedReceiver.id != text.id || mode == 'group') {
+    console.log('selectedReceiver.id != text.id');
     outputNotification(text, toNotificationArea);
   } else {
+    console.log('else');
     outputMessage(text);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
@@ -193,6 +193,10 @@ socket.on("message", (text) => {
 
 //Deselect receiver
 socket.on("receiverDeselection", (user) => {
+  deselectReceiver(user);
+});
+
+function deselectReceiver(user) {
   for (let i = 0, len = userList.children.length; i < len; i++) {
     if (
       userList.children[i].innerText === user.name &&
@@ -204,7 +208,7 @@ socket.on("receiverDeselection", (user) => {
       break;
     }
   }
-});
+}
 
 // Add active users to DOM
 function outputUsers(users) {
@@ -216,6 +220,14 @@ function outputUsers(users) {
     li.innerText = user.username;
     userList.appendChild(li);
     li.addEventListener("click", (e) => {
+      //
+      if(mode == 'group'){
+        socket.emit("leaveGroup", { username, groupName });
+        mode = "";
+        groupName = "";
+        groupList.removeChild(groupList.lastChild);
+      }
+      //
       if (selectedReceiver.id !== user.id) {
         receiverInfo.innerText = user.username;
         selectedReceiver.name = user.username;
@@ -293,24 +305,11 @@ function outputNotification(text, toNotificationArea1 = 0) {
   }
   function clickHandler(e) {
     let toNotificationArea2 = toNotificationArea1;
-    console.log(selectedReceiver.id);
-    // if(e.target.id === selectedReceiver.id){
-    //   outputMessage(text);
-    //   chatMessages.scrollTop = chatMessages.scrollHeight;
-    //   if(toNotificationArea2) {
-    //     notificationArea.removeChild(div);
-    //     notificationIcon.innerText = notificationArea.childElementCount == 0? '': notificationArea.childElementCount;
-    //     toNotificationArea2 = 0;
-    //     if(!notificationIcon.innerText){
-    //       notificationIcon.style.color = '';
-    //     }
-    //   }
-    //   return;
-    // }
-
+    // console.log(selectedReceiver.id);
     if (activeUsers.length) {
       for (let i = 0, len = userList.childElementCount; i < len; i++) {
         if (e.target.id === userList.childNodes[i].id) {
+          console.log("A");
           userList.childNodes[i].click();
           outputMessage(text);
           chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -322,7 +321,10 @@ function outputNotification(text, toNotificationArea1 = 0) {
                 : notificationArea.childElementCount;
             toNotificationArea2 = 0;
           }
-          break;
+          if (!notificationIcon.innerText) {
+            notificationIcon.style.color = "";
+          }
+          return;
         }
       }
       if (toNotificationArea2) {
@@ -337,9 +339,6 @@ function outputNotification(text, toNotificationArea1 = 0) {
         chatMessages.innerHTML = "";
       }
       outputMessage(text);
-      // if(receiverInfo.innerText !== text.userName){
-      //   outputMessage({userName: 'Server', text: `\\i\\B\\blue${text.userName}\\blue\\B\\i \\redhas left.\\red`, time: moment().format('h:mm a')});
-      // }
     } else {
       chatMessages.innerHTML = "";
       outputMessage({

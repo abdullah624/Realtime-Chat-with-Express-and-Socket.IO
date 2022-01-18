@@ -12,6 +12,7 @@ const {
   joinGroup,
 } = require("./utils/users");
 const formatMessage = require("./utils/messages");
+const { group } = require("console");
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +25,7 @@ app.use(express.static(path.join(__dirname, "public")));
 io.on("connection", (socket) => {
   let currentUser = "";
   let receiver = { name: "", id: "" };
+  let group = '';
   // Get username from user
   socket.on("userName", (userName) => {
     //Add user to userlist
@@ -35,6 +37,7 @@ io.on("connection", (socket) => {
 
   socket.on("joinGroup", ({ username, groupName }) => {
     const user = joinGroup(socket.id, username, groupName);
+    group = groupName;
 
     socket.join(user.groupName);
 
@@ -52,32 +55,35 @@ io.on("connection", (socket) => {
       .to(user.groupName)
       .emit(
         "broadcastMessageOnJoin",
-        formatMessage("Server", `\\B\\blue${user.username}\\blue\\B has joined the group.`)
+        formatMessage(
+          "Server",
+          `\\B\\blue${user.username}\\blue\\B has joined the group.`
+        )
       );
 
     // Send message to group members
-    socket.on('groupChatText', text => {
+    socket.on("groupChatText", (text) => {
       socket.broadcast
         .to(user.groupName)
-        .emit(
-          "groupMessage",
-          formatMessage(user.username, text)
-        );
+        .emit("groupMessage", formatMessage(user.username, text));
     });
 
     // Leave a member from group
-    socket.on('leaveGroup', ({username, groupName}) => {
+    socket.on("leaveGroup", ({ username, groupName }) => {
       socket.broadcast
-      .to(groupName)
-      .emit(
-        "broadcastMessageOnLeave",
-        formatMessage("Server", `\\B\\blue${username}\\blue\\B \\redhas left the group.\\red`)
+        .to(groupName)
+        .emit(
+          "broadcastMessageOnLeave",
+          formatMessage(
+            "Server",
+            `\\B\\blue${username}\\blue\\B \\redhas left the group.\\red`
+          )
         );
-        socket.leave(groupName);
+        // group = '';
+      socket.leave(groupName, err => console.log(err));
     });
   });
 
-  
   ///
 
   // Send userlist to user
@@ -139,8 +145,19 @@ io.on("connection", (socket) => {
 
   // Run when user disconnect
   socket.on("disconnect", () => {
+    socket.broadcast
+        .to(group)
+        .emit(
+          "broadcastMessageOnLeave",
+          formatMessage(
+            "Server",
+            `\\B\\blue${currentUser}\\blue\\B \\redhas left the group.\\red`
+          )
+        );
+    socket.leave(group, err => console.log(err));
     const user = userLeave(socket.id);
     socket.broadcast.emit("updatedUserList", getUserList(), user);
+    group = '';
     receiver.name = "";
     receiver.id = "";
   });
