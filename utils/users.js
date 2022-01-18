@@ -1,10 +1,20 @@
 const users = [];
+const groupUsers = [];
 
 // Add user to userlist
 function addUser(id, username) {
   const user = { id, username };
 
   users.push(user);
+}
+
+// Join user to group
+function joinGroup(id, username, groupName) {
+  const user = { id, username, groupName };
+
+  groupUsers.push(user);
+
+  return user;
 }
 
 // Get active user list
@@ -34,4 +44,4 @@ function userLeave(id) {
   return userName;
 }
 
-module.exports = { addUser, getUserList, getCurrentUser, getReceiverSocketId, userLeave };
+module.exports = { addUser, getUserList, getCurrentUser, getReceiverSocketId, userLeave, joinGroup };
